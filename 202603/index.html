@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>From Prompt to Product + Share Your 🦞 · TGO 硅谷分会 2026.3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../shared/base.css">
+  <style>
+    h1 { font-size: clamp(2rem, 4vw, 2.8rem); }
+    .hero-subtitle { font-size: 1.1rem; }
+    .speaker-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+    }
+    .speaker-photo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid rgba(59, 130, 246, 0.3);
+      flex-shrink: 0;
+    }
+    .speaker-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .speaker-title { line-height: 1.5; }
+    .highlight-box p { line-height: 1.7; }
+    .session-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .sponsor-note {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px dashed rgba(255, 255, 255, 0.15);
+    }
+    .jump-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 0.9rem;
+      padding: 0.7rem 1.2rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 8px 18px rgba(59, 130, 246, 0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .jump-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(59, 130, 246, 0.45);
+    }
+    @media (max-width: 768px) {
+      h1 { font-size: 1.75rem; }
+      .speaker-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .speaker-photo {
+        width: 100px;
+        height: 100px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-kicker">TGO 硅谷分会 · 技术分享</div>
+      <h1>From Prompt to Product + Share Your 🦞</h1>
+      <div class="hero-subtitle"></div>
+      <div class="hero-meta">
+        <span>📅 2026年3月21日（周六）</span>
+        <span>📍 120 Rizal Drive, Hillsborough, CA</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="section-grid">
+        <div>
+          <div class="section">
+            <div class="section-title">活动信息</div>
+            <h2>TGO 硅谷 · 技术分享会</h2>
+          </div>
+
+          <div class="section">
+            <div class="section-title">分享主题</div>
+            <p style="margin-bottom: 0.6rem; color: var(--muted);">Part 1 · Main Share</p>
+            <div class="highlight-box">
+              <div class="session-title">From Prompt to Product</div>
+              <p style="margin-top: 0.4rem; color: var(--muted);">Early Lessons Building AI Agents</p>
+              <div class="speaker-card" style="margin-top: 1rem;">
+                <img src="yanxie.png" alt="Yan Xie" class="speaker-photo">
+                <div class="speaker-info">
+                  <div class="speaker-name">Yan Xie</div>
+                  <div class="speaker-title">Director of Engineering at Webflow, leading Growth Engineering and AI initiatives. Previously led monetization areas at YouTube Ads including Shorts.</div>
+                </div>
+              </div>
+              <p style="margin-top: 1rem;">Building an AI agent is easy in a demo, but turning it into a reliable product is much harder. This session shares early lessons and common challenges teams face when moving from prompt experiments to real-world applications.</p>
+              <p style="margin-top: 1rem;">We'll discuss performance bottlenecks, prioritization trade-offs, and why rigorous evaluation must be part of the development process from day one. We'll also explore how teams balance launch timelines with system reliability to ensure AI initiatives deliver meaningful user value.</p>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div>
+          <div class="section">
+            <p style="margin-bottom: 0.6rem; color: var(--muted);">Part 2 · Various Share</p>
+            <div class="highlight-box">
+              <div class="session-title">Share your 🦞</div>
+              <p style="margin-top: 0.6rem;">分享嘉宾：与会人员</p>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">活动标签</div>
+            <div style="margin-top: 0.5rem;">
+              <span class="badge">AI Agents</span>
+              <span class="badge">技术分享</span>
+              <span class="badge">Product</span>
+              <span class="badge">OpenClawl</span>
+              <span class="badge">TGO 硅谷分会</span>
+            </div>
+          </div>
+
+          <div class="section">
+            <ul class="info-list">
+              <li>
+                <span class="info-label">时间</span>
+                <span class="info-value">2026年3月21日（周六）<br>16:00-20:00，场地提供晚餐。</span>
+              </li>
+              <li>
+                <span class="info-label">地点</span>
+                <span class="info-value">120 Rizal Drive, Hillsborough, CA</span>
+              </li>
+              <li>
+                <span class="info-label">主办</span>
+                <span class="info-value">TGO 硅谷分会</span>
+              </li>
+              <li>
+                <span class="info-label">场地赞助</span>
+                <span class="info-value">Jeff Tao，CEO TDengine</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <div class="section-title">参与对象</div>
+            <p style="margin-top: 0.5rem; color: var(--text);">
+              TGO 硅谷分会会员及受邀嘉宾
+            </p>
+            <a class="jump-button" href="#registration">快速报名 →</a>
+          </div>
+
+          <div class="sponsor-note">
+            感谢 <strong>Jeff Tao（TDengine CEO）</strong> 提供场地以及晚餐。
+          </div>
+        </div>
+      </div>
+
+      <div class="registration-section" id="registration">
+        <div class="section-title">活动报名</div>
+        <h2>立即报名参加</h2>
+        <p style="margin-bottom: 1.5rem; color: var(--muted);">
+          请填写以下信息完成报名，提交后请按时与会。
+        </p>
+        <form class="registration-form" id="registrationForm" target="hiddenIframe" data-script-url="https://script.google.com/macros/s/AKfycbyCaEX2V-t8BeB0WMKDINBwNdsfXOugyKV2QNH0YQMTo4Up6Ql8ILLk2pbIG7dtaeX-pQ/exec">
+          <div class="form-group">
+            <label for="name" class="form-label">姓名 <span style="color: var(--accent);">*</span></label>
+            <input type="text" id="name" name="name" class="form-input" placeholder="请输入您的姓名" required>
+          </div>
+          <div class="form-group">
+            <label for="email" class="form-label">邮箱地址 <span style="color: var(--accent);">*</span></label>
+            <input type="email" id="email" name="email" class="form-input" placeholder="your.email@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="company" class="form-label">公司名称 <span style="color: var(--accent);">*</span></label>
+            <input type="text" id="company" name="company" class="form-input" placeholder="请输入您的公司名称" required>
+          </div>
+          <input type="hidden" id="timestamp" name="timestamp">
+          <input type="hidden" id="event" name="event" value="202603">
+          <button type="submit" class="form-button" id="submitButton">提交报名</button>
+          <div class="form-message" id="formMessage"></div>
+        </form>
+        <iframe name="hiddenIframe" id="hiddenIframe" style="display: none;"></iframe>
+      </div>
+
+      <div class="footer">
+        <p>Organized by <strong>TGO 硅谷分会</strong> · 2026.3 技术分享</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">更多活动详情请关注 TGO 硅谷分会官方通知</p>
+      </div>
+    </section>
+  </main>
+  <script src="../shared/registration.js"></script>
+</body>
+</html>

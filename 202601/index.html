@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Vibe Engineering in 2026.1 · TGO 硅谷分会</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../shared/base.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-kicker">TGO 硅谷分会 · 内部分享会</div>
+      <h1>Vibe Engineering in 2026.1</h1>
+      <div class="hero-subtitle">Vibe Coding 最新经验分享</div>
+      <div class="hero-meta">
+        <span>📅 2026年1月24日</span>
+        <span>🕐 2:00pm - 5:00pm</span>
+        <span>📍 地点待定</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="section-grid">
+        <div>
+          <div class="section-title">活动信息</div>
+          <h2>Vibe Coding 最新经验分享</h2>
+          <ul class="info-list">
+            <li>
+              <span class="info-label">时间</span>
+              <span class="info-value">2026年1月24日（周五）<br>2:00pm - 5:00pm</span>
+            </li>
+            <li>
+              <span class="info-label">地点</span>
+              <span class="info-value">待定（将在活动前通知）</span>
+            </li>
+            <li>
+              <span class="info-label">主办</span>
+              <span class="info-value">TGO 硅谷分会</span>
+            </li>
+            <li>
+              <span class="info-label">内容</span>
+              <span class="info-value">Vibe Coding 最新经验TGO内部分享会</span>
+            </li>
+            <li>
+              <span class="info-label">主题</span>
+              <span class="info-value">Vibe Engineering in 2026.1</span>
+            </li>
+          </ul>
+
+          <div class="highlight-box">
+            <p><strong>活动简介：</strong>本次分享会将深入探讨 Vibe Coding 的最新工程实践和经验，涵盖技术架构、开发流程、团队协作等多个维度，为 TGO 会员提供宝贵的技术交流机会。</p>
+          </div>
+        </div>
+
+        <div>
+          <div class="section">
+            <div class="section-title">分享者</div>
+            <div class="speaker-card">
+              <div class="speaker-name">Dongxu Huang</div>
+              <div class="speaker-title">Vibe Engineering 技术专家</div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">活动标签</div>
+            <div style="margin-top: 0.5rem;">
+              <span class="badge">技术分享</span>
+              <span class="badge">Vibe Coding</span>
+              <span class="badge">工程实践</span>
+              <span class="badge">TGO 内部分享</span>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">参与对象</div>
+            <p style="margin-top: 0.5rem; color: var(--text);">
+              TGO 硅谷分会会员及受邀嘉宾
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="registration-section">
+        <div class="section-title">活动报名</div>
+        <h2>立即报名参加</h2>
+        <p style="margin-bottom: 1.5rem; color: var(--muted);">
+          请填写以下信息完成报名，我们会在活动前通过邮件与您确认。
+        </p>
+        
+        <form class="registration-form" id="registrationForm" target="hiddenIframe" data-script-url="https://script.google.com/macros/s/AKfycby-N-KkaW5Dd_crx7P5hbRiFmkkZokRPXHZjzkMG1f80lA_IITK6PTx8r8Eel3iZ3ZK/exec">
+          <div class="form-group">
+            <label for="name" class="form-label">姓名 <span style="color: var(--accent);">*</span></label>
+            <input 
+              type="text" 
+              id="name" 
+              name="name" 
+              class="form-input" 
+              placeholder="请输入您的姓名"
+              required
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="email" class="form-label">邮箱地址 <span style="color: var(--accent);">*</span></label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              class="form-input" 
+              placeholder="your.email@example.com"
+              required
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="company" class="form-label">公司名称 <span style="color: var(--accent);">*</span></label>
+            <input 
+              type="text" 
+              id="company" 
+              name="company" 
+              class="form-input" 
+              placeholder="请输入您的公司名称"
+              required
+            >
+          </div>
+          
+          <input type="hidden" id="timestamp" name="timestamp">
+          <input type="hidden" id="event" name="event" value="202601">
+          
+          <button type="submit" class="form-button" id="submitButton">
+            提交报名
+          </button>
+          
+          <div class="form-message" id="formMessage"></div>
+        </form>
+        
+        <!-- 隐藏的 iframe 用于提交表单，避免页面刷新 -->
+        <iframe name="hiddenIframe" id="hiddenIframe" style="display: none;"></iframe>
+      </div>
+
+      <div class="footer">
+        <p>Organized by <strong>TGO 硅谷分会</strong> · Vibe Engineering in 2026.1</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">更多活动详情请关注 TGO 硅谷分会官方通知</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="../shared/registration.js"></script>
+</body>
+</html>
