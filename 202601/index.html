@@ -5,11 +5,27 @@
   <title>Vibe Engineering in 2026.1 · TGO 硅谷分会</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="../shared/base.css">
+  <style>
+    .event-ended-banner {
+      display: none;
+      width: fit-content;
+      margin: 0 auto 0.9rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      color: #fee2e2;
+      background: rgba(127, 29, 29, 0.72);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+  </style>
 </head>
 <body>
   <header class="hero">
     <div class="hero-inner">
       <div class="hero-kicker">TGO 硅谷分会 · 内部分享会</div>
+      <div class="event-ended-banner" id="eventEndedBanner">【活动已结束】</div>
       <h1>Vibe Engineering in 2026.1</h1>
       <div class="hero-subtitle">Vibe Coding 最新经验分享</div>
       <div class="hero-meta">
@@ -148,5 +164,14 @@
   </main>
 
   <script src="../shared/registration.js"></script>
+  <script>
+    (function () {
+      var endTime = new Date(2026, 0, 24, 23, 59, 0, 0);
+      var banner = document.getElementById("eventEndedBanner");
+      if (banner && new Date() > endTime) {
+        banner.style.display = "inline-flex";
+      }
+    }());
+  </script>
 </body>
 </html>

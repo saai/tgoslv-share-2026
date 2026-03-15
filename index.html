@@ -58,15 +58,80 @@
       background: #273449;
       color: #bfdbfe;
     }
+
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .status {
+      flex-shrink: 0;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+    }
+
+    .status.open {
+      color: #bbf7d0;
+      background: rgba(20, 83, 45, 0.35);
+      border-color: rgba(74, 222, 128, 0.24);
+    }
+
+    .status.ended {
+      color: #fecaca;
+      background: rgba(127, 29, 29, 0.5);
+      border-color: rgba(248, 113, 113, 0.24);
+    }
   </style>
 </head>
 <body>
   <main>
     <h1>活动列表</h1>
     <ul>
-      <li><a href="./202601/index.html">2026.01 · Vibe Engineering in 2026.1</a></li>
-      <li><a href="./202603/index.html">2026.03 · From Prompt to Product + Share Your 🦞</a></li>
+      <li>
+        <a href="./202601/index.html">
+          <span class="item">
+            <span>2026.01 · Vibe Engineering in 2026.1</span>
+            <span class="status" id="status-202601">报名中</span>
+          </span>
+        </a>
+      </li>
+      <li>
+        <a href="./202603/index.html">
+          <span class="item">
+            <span>2026.03 · From Prompt to Product + Share Your 🦞</span>
+            <span class="status" id="status-202603">报名中</span>
+          </span>
+        </a>
+      </li>
     </ul>
   </main>
+
+  <script>
+    (function () {
+      var now = new Date();
+      var events = [
+        { id: "status-202601", endTime: new Date(2026, 0, 24, 23, 59, 0, 0) },
+        { id: "status-202603", endTime: new Date(2026, 2, 21, 23, 59, 0, 0) }
+      ];
+
+      events.forEach(function (event) {
+        var badge = document.getElementById(event.id);
+        if (!badge) {
+          return;
+        }
+        if (now > event.endTime) {
+          badge.textContent = "【活动已结束】";
+          badge.className = "status ended";
+        } else {
+          badge.textContent = "报名中";
+          badge.className = "status open";
+        }
+      });
+    }());
+  </script>
 </body>
 </html>
