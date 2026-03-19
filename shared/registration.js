@@ -9,10 +9,12 @@
   const messageDiv = document.getElementById('formMessage');
   const emailInput = document.getElementById('email');
   const eventInput = document.getElementById('event');
+  const capacityStatus = document.getElementById('capacityStatus');
 
   let lastCheckedEmail = '';
   let lastCheckedEvent = '';
   let lastCheckExists = false;
+  let lastKnownCapacity = null;
   let isChecking = false;
   let allowSubmit = false;
   let isSubmitting = false;
@@ -50,7 +52,7 @@
   form.method = 'POST';
   form.target = 'hiddenIframe';
 
-  function jsonpCheck(email, event, callback) {
+  function jsonpRequest(action, params, callback) {
     const callbackName = `check_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
     const cleanup = (scriptEl) => {
       if (scriptEl && scriptEl.parentNode) {
@@ -65,18 +67,70 @@
     };
 
     const script = document.createElement('script');
-    const query = new URLSearchParams({
-      action: 'check',
-      email: email,
-      event: event,
+    const query = new URLSearchParams(Object.assign({}, params, {
+      action: action,
       callback: callbackName
-    });
+    }));
     script.src = `${scriptUrl}?${query.toString()}`;
     script.onerror = () => {
       cleanup(script);
       callback({ success: false, error: 'network' });
     };
     document.body.appendChild(script);
+  }
+
+  function updateCapacityStatus(result) {
+    if (!capacityStatus || !result || typeof result !== 'object') {
+      return;
+    }
+
+    const hasLimit = typeof result.limit === 'number';
+    const count = typeof result.count === 'number' ? result.count : 0;
+    const remaining = typeof result.remaining === 'number'
+      ? result.remaining
+      : (hasLimit ? Math.max(0, result.limit - count) : null);
+    const isFull = Boolean(result.isFull || (hasLimit && remaining === 0));
+
+    lastKnownCapacity = {
+      hasLimit,
+      count,
+      remaining,
+      isFull
+    };
+
+    if (!hasLimit) {
+      capacityStatus.textContent = '报名进行中';
+      capacityStatus.className = 'capacity-status';
+      return;
+    }
+
+    if (isFull) {
+      capacityStatus.textContent = `活动已满（${count}/${result.limit}）`;
+      capacityStatus.className = 'capacity-status full';
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = '报名已满';
+      }
+      return;
+    }
+
+    capacityStatus.textContent = `报名中 · 剩余 ${remaining} 个名额（已报名 ${count}/${result.limit}）`;
+    capacityStatus.className = 'capacity-status open';
+    if (submitButton && !isSubmitting && !lastCheckExists) {
+      submitButton.disabled = false;
+      submitButton.textContent = '提交报名';
+    }
+  }
+
+  function refreshCapacityStatus() {
+    const event = getEventValue();
+    if (!event || !capacityStatus) {
+      return;
+    }
+
+    jsonpRequest('status', { event }, (result) => {
+      updateCapacityStatus(result);
+    });
   }
 
   function runDuplicateCheck(email, event, onDone) {
@@ -88,7 +142,7 @@
       return;
     }
     isChecking = true;
-    jsonpCheck(email, event, (result) => {
+    jsonpRequest('check', { email, event }, (result) => {
       isChecking = false;
       onDone(result || { exists: false });
     });
@@ -105,9 +159,11 @@
       if (submitButton) {
         submitButton.disabled = true;
       }
-    } else if (submitButton) {
+    } else if (submitButton && !(lastKnownCapacity && lastKnownCapacity.isFull)) {
       submitButton.disabled = false;
     }
+
+    updateCapacityStatus(result);
   }
 
   if (emailInput) {
@@ -180,6 +236,8 @@
 
         if (responseText.includes('duplicate')) {
           showMessage('该邮箱已报名，无需重复提交。', 'error');
+        } else if (responseText.includes('"full"') || responseText.includes('活动已满')) {
+          showMessage('报名已满，当前活动最多接受 40 人。', 'error');
         } else if (responseText.includes('success') || responseText.includes('成功') || responseText.includes('OK')) {
           showMessage('信息已提交，请按时与会。', 'success');
           form.reset();
@@ -194,6 +252,8 @@
           const iframeUrl = hiddenIframe.contentWindow.location.href;
           if (iframeUrl.includes('duplicate')) {
             showMessage('该邮箱已报名，无需重复提交。', 'error');
+          } else if (iframeUrl.includes('full')) {
+            showMessage('报名已满，当前活动最多接受 40 人。', 'error');
           } else if (iframeUrl.includes('error') || iframeUrl.includes('403') || iframeUrl.includes('401')) {
             showMessage('提交失败：权限错误。请检查 Google Apps Script 的权限设置。', 'error');
           } else {
@@ -208,9 +268,15 @@
 
       if (submitButton) {
         isSubmitting = false;
-        submitButton.disabled = false;
-        submitButton.textContent = '提交报名';
+        if (lastKnownCapacity && lastKnownCapacity.isFull) {
+          submitButton.disabled = true;
+          submitButton.textContent = '报名已满';
+        } else {
+          submitButton.disabled = false;
+          submitButton.textContent = '提交报名';
+        }
       }
+      refreshCapacityStatus();
     });
 
     hiddenIframe.addEventListener('error', () => {
@@ -251,6 +317,12 @@
       return false;
     }
 
+    if (lastKnownCapacity && lastKnownCapacity.isFull) {
+      event.preventDefault();
+      showMessage('报名已满，当前活动最多接受 40 人。', 'error');
+      return false;
+    }
+
     if (lastCheckedEmail === email && lastCheckedEvent === eventId) {
       if (lastCheckExists) {
         event.preventDefault();
@@ -271,4 +343,6 @@
       form.submit();
     });
   });
+
+  refreshCapacityStatus();
 })();

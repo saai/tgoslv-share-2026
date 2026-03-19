@@ -6,9 +6,15 @@
 // 请替换为您新建的 202603 用 Google Sheet 的 ID（从 Sheet 的 URL 中复制）
 // 例如：https://docs.google.com/spreadsheets/d/这里就是Sheet_ID/edit
 const SPREADSHEET_ID = '1-sROFh3aavkFxE6_MqMfg1X84AiOnZVdUmJeTOlJYs0';
+const EVENT_LIMITS = {
+  '202603': 40
+};
 
 function doPost(e) {
+  var lock = LockService.getScriptLock();
   try {
+    lock.waitLock(10000);
+
     var data = {};
     if (e.parameter) {
       data = {
@@ -40,10 +46,27 @@ function doPost(e) {
 
     var email = (data.email || '').toString().trim().toLowerCase();
     var eventId = (data.event || '').toString().trim();
+    var limit = getEventLimit_(eventId);
     if (email && checkExisting_(email, eventId)) {
       return ContentService
         .createTextOutput(JSON.stringify({ success: false, error: 'duplicate', message: '已报名' }))
         .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (limit !== null) {
+      var count = countRegistrations_(eventId);
+      if (count >= limit) {
+        return ContentService
+          .createTextOutput(JSON.stringify({
+            success: false,
+            error: 'full',
+            message: '活动已满',
+            limit: limit,
+            count: count,
+            remaining: 0
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
     }
 
     sheet.appendRow([
@@ -55,27 +78,62 @@ function doPost(e) {
     ]);
 
     return ContentService
-      .createTextOutput(JSON.stringify({ success: true, message: '数据已成功提交' }))
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: '数据已成功提交',
+        limit: limit,
+        count: limit !== null ? countRegistrations_(eventId) : null,
+        remaining: limit !== null ? Math.max(0, limit - countRegistrations_(eventId)) : null
+      }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
     return ContentService
       .createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    try {
+      lock.releaseLock();
+    } catch (err) {}
   }
 }
 
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
+  if (params.action === 'status') {
+    var eventId = (params.event || '').toString().trim();
+    var limit = getEventLimit_(eventId);
+    var count = eventId ? countRegistrations_(eventId) : 0;
+    var remaining = limit !== null ? Math.max(0, limit - count) : null;
+
+    return respond_({
+      success: true,
+      event: eventId,
+      limit: limit,
+      count: count,
+      remaining: remaining,
+      isFull: limit !== null ? count >= limit : false
+    }, params.callback);
+  }
+
   if (params.action === 'check') {
     var email = (params.email || '').toString().trim().toLowerCase();
     var eventId = (params.event || '').toString().trim();
     var exists = false;
+    var limit = getEventLimit_(eventId);
+    var count = eventId ? countRegistrations_(eventId) : 0;
 
     if (email) {
       exists = checkExisting_(email, eventId);
     }
 
-    return respond_({ success: true, exists: exists }, params.callback);
+    return respond_({
+      success: true,
+      exists: exists,
+      limit: limit,
+      count: count,
+      remaining: limit !== null ? Math.max(0, limit - count) : null,
+      isFull: limit !== null ? count >= limit : false
+    }, params.callback);
   }
 
   return respond_({ status: 'OK', message: 'Google Apps Script 已就绪' }, params.callback);
@@ -125,4 +183,39 @@ function checkExisting_(email, eventId) {
   }
 
   return false;
+}
+
+function countRegistrations_(eventId) {
+  if (!eventId) {
+    return 0;
+  }
+
+  var spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = spreadsheet.getActiveSheet();
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return 0;
+  }
+
+  var header = values[0];
+  var eventIndex = header.indexOf('活动');
+  if (eventIndex === -1) {
+    return Math.max(0, values.length - 1);
+  }
+
+  var count = 0;
+  for (var i = 1; i < values.length; i++) {
+    var rowEvent = (values[i][eventIndex] || '').toString().trim();
+    if (rowEvent === eventId) {
+      count++;
+    }
+  }
+  return count;
+}
+
+function getEventLimit_(eventId) {
+  if (!eventId || !EVENT_LIMITS.hasOwnProperty(eventId)) {
+    return null;
+  }
+  return EVENT_LIMITS[eventId];
 }
