@@ -16,6 +16,7 @@
   let lastCheckExists = false;
   let lastKnownCapacity = null;
   let isChecking = false;
+  let isLoadingCapacity = false;
   let allowSubmit = false;
   let isSubmitting = false;
 
@@ -85,11 +86,12 @@
     }
 
     const hasLimit = typeof result.limit === 'number';
-    const count = typeof result.count === 'number' ? result.count : 0;
+    const rawCount = typeof result.count === 'number' ? result.count : 0;
+    const count = hasLimit ? Math.min(rawCount, result.limit) : rawCount;
     const remaining = typeof result.remaining === 'number'
-      ? result.remaining
+      ? (hasLimit ? Math.max(0, Math.min(result.remaining, result.limit)) : result.remaining)
       : (hasLimit ? Math.max(0, result.limit - count) : null);
-    const isFull = Boolean(result.isFull || (hasLimit && remaining === 0));
+    const isFull = Boolean(result.isFull || (hasLimit && rawCount >= result.limit) || (hasLimit && remaining === 0));
 
     lastKnownCapacity = {
       hasLimit,
@@ -105,7 +107,7 @@
     }
 
     if (isFull) {
-      capacityStatus.textContent = `活动已满（${count}/${result.limit}）`;
+      capacityStatus.textContent = '报名已满';
       capacityStatus.className = 'capacity-status full';
       if (submitButton) {
         submitButton.disabled = true;
@@ -128,7 +130,14 @@
       return;
     }
 
+    isLoadingCapacity = true;
+    if (submitButton && !isSubmitting) {
+      submitButton.disabled = true;
+      submitButton.textContent = '查询报名状态中...';
+    }
+
     jsonpRequest('status', { event }, (result) => {
+      isLoadingCapacity = false;
       updateCapacityStatus(result);
     });
   }
@@ -292,6 +301,11 @@
   form.addEventListener('submit', (event) => {
     if (isSubmitting) {
       event.preventDefault();
+      return false;
+    }
+    if (isLoadingCapacity || isChecking) {
+      event.preventDefault();
+      showMessage('正在查询报名状态，请稍候再提交。', 'loading');
       return false;
     }
     if (allowSubmit) {

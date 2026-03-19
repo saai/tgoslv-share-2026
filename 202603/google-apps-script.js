@@ -56,13 +56,14 @@ function doPost(e) {
     if (limit !== null) {
       var count = countRegistrations_(eventId);
       if (count >= limit) {
+        var cappedCount = Math.min(count, limit);
         return ContentService
           .createTextOutput(JSON.stringify({
             success: false,
             error: 'full',
             message: '活动已满',
             limit: limit,
-            count: count,
+            count: cappedCount,
             remaining: 0
           }))
           .setMimeType(ContentService.MimeType.JSON);
@@ -77,13 +78,16 @@ function doPost(e) {
       data.timestamp || new Date().toISOString()
     ]);
 
+    var finalCount = limit !== null ? countRegistrations_(eventId) : null;
+    var displayCount = limit !== null ? Math.min(finalCount, limit) : null;
+
     return ContentService
       .createTextOutput(JSON.stringify({
         success: true,
         message: '数据已成功提交',
         limit: limit,
-        count: limit !== null ? countRegistrations_(eventId) : null,
-        remaining: limit !== null ? Math.max(0, limit - countRegistrations_(eventId)) : null
+        count: displayCount,
+        remaining: limit !== null ? Math.max(0, limit - displayCount) : null
       }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
@@ -103,13 +107,14 @@ function doGet(e) {
     var eventId = (params.event || '').toString().trim();
     var limit = getEventLimit_(eventId);
     var count = eventId ? countRegistrations_(eventId) : 0;
-    var remaining = limit !== null ? Math.max(0, limit - count) : null;
+    var displayCount = limit !== null ? Math.min(count, limit) : count;
+    var remaining = limit !== null ? Math.max(0, limit - displayCount) : null;
 
     return respond_({
       success: true,
       event: eventId,
       limit: limit,
-      count: count,
+      count: displayCount,
       remaining: remaining,
       isFull: limit !== null ? count >= limit : false
     }, params.callback);
@@ -121,6 +126,7 @@ function doGet(e) {
     var exists = false;
     var limit = getEventLimit_(eventId);
     var count = eventId ? countRegistrations_(eventId) : 0;
+    var displayCount = limit !== null ? Math.min(count, limit) : count;
 
     if (email) {
       exists = checkExisting_(email, eventId);
@@ -130,8 +136,8 @@ function doGet(e) {
       success: true,
       exists: exists,
       limit: limit,
-      count: count,
-      remaining: limit !== null ? Math.max(0, limit - count) : null,
+      count: displayCount,
+      remaining: limit !== null ? Math.max(0, limit - displayCount) : null,
       isFull: limit !== null ? count >= limit : false
     }, params.callback);
   }
