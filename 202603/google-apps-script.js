@@ -246,23 +246,25 @@ function sendConfirmationEmail_(data) {
   }
 
   var attendeeName = (data.name || '').toString().trim() || '朋友';
-  var subject = 'TGO 硅谷分会活动报名成功：From Prompt to Product + Share Your 🦞';
+  var subject = '【报名确认】TGO 硅谷分会活动：From Prompt to Product + Share Your 🦞';
   var body = [
     attendeeName + '，您好：',
     '',
-    '您的报名已成功，活动信息如下：',
+    '感谢报名 TGO 硅谷分会活动，现确认您的报名已成功。',
     '',
     '活动信息：From Prompt to Product + Share Your 🦞',
     '时间：',
     '2026年3月21日（周六）',
-    '16:00-20:00，场地提供晚餐。',
+    '16:00-20:00',
+    '活动现场提供晚餐。',
     '地点：',
     '120 Rizal Drive, Hillsborough, CA',
     '主办：',
     'TGO 硅谷分会',
     '',
-    '期待您的参加。',
-    '如有变动，我们会通过邮件另行通知。'
+    '请按时到场。如活动安排有更新，我们会通过邮件另行通知。',
+    '',
+    '期待与您现场交流。'
   ].join('\n');
 
   MailApp.sendEmail({

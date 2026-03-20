@@ -215,13 +215,13 @@
             ? hiddenIframe.contentWindow.location.href
             : '';
           if (iframeUrl && (iframeUrl.includes('error') || iframeUrl.includes('403') || iframeUrl.includes('401'))) {
-            showMessage('提交失败：权限错误 (403)。请确保 Google Apps Script Web App 的权限设置为"任何人"可访问，并重新部署。', 'error');
+            showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
           } else {
-            showMessage('信息已提交，请按时与会。', 'success');
+            showMessage('报名成功，请查收确认邮件。', 'success');
             form.reset();
           }
         } catch (error) {
-          showMessage('提交可能已成功。如果数据未出现在 Sheet 中，请检查 Google Apps Script 的执行日志。', 'success');
+          showMessage('报名成功，请查收确认邮件。', 'success');
           form.reset();
         }
         isSubmitting = false;
@@ -253,7 +253,7 @@
           showMessage('报名成功，请查收确认邮件。', 'success');
           form.reset();
         } else if (responseText.includes('error') || responseText.includes('Error') || responseText.includes('403') || responseText.includes('401')) {
-          showMessage('提交失败：权限错误。请检查 Google Apps Script 的权限设置，确保 Web App 设置为"任何人"可访问。', 'error');
+          showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
         } else {
           showMessage('报名成功，请查收确认邮件。', 'success');
           form.reset();
@@ -268,7 +268,7 @@
           } else if (iframeUrl.includes('full')) {
             showMessage('报名已满，当前活动最多接受 40 人。', 'error');
           } else if (iframeUrl.includes('error') || iframeUrl.includes('403') || iframeUrl.includes('401')) {
-            showMessage('提交失败：权限错误。请检查 Google Apps Script 的权限设置。', 'error');
+            showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
           } else {
             showMessage('报名成功，请查收确认邮件。', 'success');
             form.reset();
@@ -293,7 +293,7 @@
     });
 
     hiddenIframe.addEventListener('error', () => {
-      showMessage('提交失败：网络错误。请检查网络连接后重试。', 'error');
+      showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
       if (submitButton) {
         isSubmitting = false;
         submitButton.disabled = false;
@@ -305,11 +305,6 @@
   form.addEventListener('submit', (event) => {
     if (isSubmitting) {
       event.preventDefault();
-      return false;
-    }
-    if (isLoadingCapacity || isChecking) {
-      event.preventDefault();
-      showMessage('正在查询报名状态，请稍候再提交。', 'loading');
       return false;
     }
     if (allowSubmit) {
@@ -332,6 +327,12 @@
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       event.preventDefault();
       showMessage('请输入有效的邮箱地址', 'error');
+      return false;
+    }
+
+    if (isLoadingCapacity || isChecking) {
+      event.preventDefault();
+      showMessage('正在查询报名状态，请稍候再提交。', 'loading');
       return false;
     }
 
