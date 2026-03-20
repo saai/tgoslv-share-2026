@@ -19,6 +19,7 @@
   let isLoadingCapacity = false;
   let allowSubmit = false;
   let isSubmitting = false;
+  let pendingCheckCallbacks = [];
 
   function showMessage(message, type) {
     if (!messageDiv) {
@@ -86,6 +87,10 @@
 
   function updateCapacityStatus(result) {
     if (!capacityStatus || !result || typeof result !== 'object') {
+      if (submitButton && !isSubmitting) {
+        submitButton.disabled = false;
+        submitButton.textContent = '提交报名';
+      }
       return;
     }
 
@@ -142,6 +147,16 @@
 
     jsonpRequest('status', { event }, (result) => {
       isLoadingCapacity = false;
+      if (!result || result.error === 'network' || result.success === false) {
+        capacityStatus.textContent = '报名进行中';
+        capacityStatus.className = 'capacity-status';
+        lastKnownCapacity = null;
+        if (submitButton && !isSubmitting) {
+          submitButton.disabled = false;
+          submitButton.textContent = '提交报名';
+        }
+        return;
+      }
       updateCapacityStatus(result);
     });
   }
@@ -152,12 +167,26 @@
       return;
     }
     if (isChecking) {
+      pendingCheckCallbacks.push({ email, event, onDone });
       return;
     }
     isChecking = true;
     jsonpRequest('check', { email, event }, (result) => {
       isChecking = false;
-      onDone(result || { exists: false });
+      const finalResult = result || { exists: false };
+      onDone(finalResult);
+
+      if (pendingCheckCallbacks.length > 0) {
+        const queuedCallbacks = pendingCheckCallbacks.slice();
+        pendingCheckCallbacks = [];
+        queuedCallbacks.forEach((item) => {
+          if (item.email === email && item.event === event) {
+            item.onDone(finalResult);
+            return;
+          }
+          runDuplicateCheck(item.email, item.event, item.onDone);
+        });
+      }
     });
   }
 
@@ -334,7 +363,7 @@
       return false;
     }
 
-    if (isLoadingCapacity || isChecking) {
+    if (isLoadingCapacity) {
       event.preventDefault();
       showMessage('正在查询报名状态，请稍候再提交。', 'loading');
       return false;
