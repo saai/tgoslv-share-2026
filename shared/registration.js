@@ -245,15 +245,17 @@
 
         if (responseText.includes('duplicate')) {
           showMessage('该邮箱已报名，无需重复提交。', 'error');
+        } else if (responseText.includes('email_failed')) {
+          showMessage('报名已记录，但确认邮件发送失败，请联系主办方。', 'error');
         } else if (responseText.includes('"full"') || responseText.includes('活动已满')) {
           showMessage('报名已满，当前活动最多接受 40 人。', 'error');
         } else if (responseText.includes('success') || responseText.includes('成功') || responseText.includes('OK')) {
-          showMessage('信息已提交，请按时与会。', 'success');
+          showMessage('报名成功，请查收确认邮件。', 'success');
           form.reset();
         } else if (responseText.includes('error') || responseText.includes('Error') || responseText.includes('403') || responseText.includes('401')) {
           showMessage('提交失败：权限错误。请检查 Google Apps Script 的权限设置，确保 Web App 设置为"任何人"可访问。', 'error');
         } else {
-          showMessage('信息已提交，请按时与会。', 'success');
+          showMessage('报名成功，请查收确认邮件。', 'success');
           form.reset();
         }
       } catch (error) {
@@ -261,16 +263,18 @@
           const iframeUrl = hiddenIframe.contentWindow.location.href;
           if (iframeUrl.includes('duplicate')) {
             showMessage('该邮箱已报名，无需重复提交。', 'error');
+          } else if (iframeUrl.includes('email_failed')) {
+            showMessage('报名已记录，但确认邮件发送失败，请联系主办方。', 'error');
           } else if (iframeUrl.includes('full')) {
             showMessage('报名已满，当前活动最多接受 40 人。', 'error');
           } else if (iframeUrl.includes('error') || iframeUrl.includes('403') || iframeUrl.includes('401')) {
             showMessage('提交失败：权限错误。请检查 Google Apps Script 的权限设置。', 'error');
           } else {
-            showMessage('信息已提交，请按时与会。', 'success');
+            showMessage('报名成功，请查收确认邮件。', 'success');
             form.reset();
           }
         } catch (urlError) {
-          showMessage('信息已提交，请按时与会。', 'success');
+          showMessage('报名成功，请查收确认邮件。', 'success');
           form.reset();
         }
       }

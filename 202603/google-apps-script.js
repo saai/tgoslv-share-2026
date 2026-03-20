@@ -78,6 +78,19 @@ function doPost(e) {
       data.timestamp || new Date().toISOString()
     ]);
 
+    try {
+      sendConfirmationEmail_(data);
+    } catch (mailError) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          success: false,
+          error: 'email_failed',
+          message: '报名已记录，但确认邮件发送失败，请联系主办方。',
+          detail: mailError.toString()
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     var finalCount = limit !== null ? countRegistrations_(eventId) : null;
     var displayCount = limit !== null ? Math.min(finalCount, limit) : null;
 
@@ -224,4 +237,38 @@ function getEventLimit_(eventId) {
     return null;
   }
   return EVENT_LIMITS[eventId];
+}
+
+function sendConfirmationEmail_(data) {
+  var recipient = (data.email || '').toString().trim();
+  if (!recipient) {
+    throw new Error('missing_recipient');
+  }
+
+  var attendeeName = (data.name || '').toString().trim() || '朋友';
+  var subject = 'TGO 硅谷分会活动报名成功：From Prompt to Product + Share Your 🦞';
+  var body = [
+    attendeeName + '，您好：',
+    '',
+    '您的报名已成功，活动信息如下：',
+    '',
+    '活动信息：From Prompt to Product + Share Your 🦞',
+    '时间：',
+    '2026年3月21日（周六）',
+    '16:00-20:00，场地提供晚餐。',
+    '地点：',
+    '120 Rizal Drive, Hillsborough, CA',
+    '主办：',
+    'TGO 硅谷分会',
+    '',
+    '期待您的参加。',
+    '如有变动，我们会通过邮件另行通知。'
+  ].join('\n');
+
+  MailApp.sendEmail({
+    to: recipient,
+    subject: subject,
+    body: body,
+    name: 'TGO 硅谷分会'
+  });
 }
