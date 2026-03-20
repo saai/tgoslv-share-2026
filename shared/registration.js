@@ -39,6 +39,10 @@
     return (value || '').trim().toLowerCase();
   }
 
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }
+
   function getEventValue() {
     return eventInput ? eventInput.value.trim() : '';
   }
@@ -179,7 +183,7 @@
     const checkOnBlur = () => {
       const email = normalizeEmail(emailInput.value);
       const event = getEventValue();
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (!email || !isValidEmail(email)) {
         return;
       }
 
@@ -217,11 +221,11 @@
           if (iframeUrl && (iframeUrl.includes('error') || iframeUrl.includes('403') || iframeUrl.includes('401'))) {
             showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
           } else {
-            showMessage('报名成功，请查收确认邮件。', 'success');
+            showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
             form.reset();
           }
         } catch (error) {
-          showMessage('报名成功，请查收确认邮件。', 'success');
+          showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
           form.reset();
         }
         isSubmitting = false;
@@ -250,12 +254,12 @@
         } else if (responseText.includes('"full"') || responseText.includes('活动已满')) {
           showMessage('报名已满，当前活动最多接受 40 人。', 'error');
         } else if (responseText.includes('success') || responseText.includes('成功') || responseText.includes('OK')) {
-          showMessage('报名成功，请查收确认邮件。', 'success');
+          showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
           form.reset();
         } else if (responseText.includes('error') || responseText.includes('Error') || responseText.includes('403') || responseText.includes('401')) {
           showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
         } else {
-          showMessage('报名成功，请查收确认邮件。', 'success');
+          showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
           form.reset();
         }
       } catch (error) {
@@ -270,11 +274,11 @@
           } else if (iframeUrl.includes('error') || iframeUrl.includes('403') || iframeUrl.includes('401')) {
             showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
           } else {
-            showMessage('报名成功，请查收确认邮件。', 'success');
+            showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
             form.reset();
           }
         } catch (urlError) {
-          showMessage('报名成功，请查收确认邮件。', 'success');
+          showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
           form.reset();
         }
       }
@@ -324,7 +328,7 @@
       return false;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!isValidEmail(email)) {
       event.preventDefault();
       showMessage('请输入有效的邮箱地址', 'error');
       return false;
