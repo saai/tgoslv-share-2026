@@ -5,39 +5,41 @@
   }
 
   const submitButton = document.getElementById('submitButton');
-  const hiddenIframe = document.getElementById('hiddenIframe');
   const messageDiv = document.getElementById('formMessage');
   const emailInput = document.getElementById('email');
   const eventInput = document.getElementById('event');
   const capacityStatus = document.getElementById('capacityStatus');
+  const apiUrl = form.getAttribute('data-api-url') || '/api/registrations';
+  const registrationCloseTimes = {
+    '202601': '2026-01-24T00:00:00-08:00',
+    '202603': '2026-03-21T00:00:00-07:00'
+  };
 
   let lastCheckedEmail = '';
   let lastCheckedEvent = '';
   let lastCheckExists = false;
   let lastKnownCapacity = null;
-  let isChecking = false;
   let isLoadingCapacity = false;
-  let allowSubmit = false;
   let isSubmitting = false;
-  let pendingCheckCallbacks = [];
 
   function showMessage(message, type) {
     if (!messageDiv) {
       return;
     }
+
     messageDiv.textContent = message;
-    messageDiv.className = 'form-message ' + type;
+    messageDiv.className = `form-message ${type}`;
     messageDiv.style.display = 'block';
 
     if (type === 'success' || type === 'error') {
-      setTimeout(() => {
+      window.setTimeout(() => {
         messageDiv.style.display = 'none';
       }, 5000);
     }
   }
 
   function normalizeEmail(value) {
-    return (value || '').trim().toLowerCase();
+    return String(value || '').trim().toLowerCase();
   }
 
   function isValidEmail(value) {
@@ -48,301 +50,236 @@
     return eventInput ? eventInput.value.trim() : '';
   }
 
-  const scriptUrl = form.getAttribute('data-script-url');
-  if (!scriptUrl || scriptUrl === 'YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE') {
-    showMessage('错误：请先配置 Google Apps Script URL', 'error');
-    return;
+  function isRegistrationClosedLocally(eventId) {
+    const cutoff = registrationCloseTimes[eventId];
+    if (!cutoff) {
+      return false;
+    }
+    return Date.now() >= new Date(cutoff).getTime();
   }
 
-  form.action = scriptUrl;
-  form.method = 'POST';
-  form.target = 'hiddenIframe';
+  function setSubmitState(disabled, text) {
+    if (!submitButton) {
+      return;
+    }
+    submitButton.disabled = disabled;
+    submitButton.textContent = text;
+  }
 
-  function jsonpRequest(action, params, callback) {
-    const callbackName = `check_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-    const cleanup = (scriptEl) => {
-      if (scriptEl && scriptEl.parentNode) {
-        scriptEl.parentNode.removeChild(scriptEl);
-      }
-      delete window[callbackName];
-    };
+  async function requestJson(query, options) {
+    const response = await fetch(query, options);
+    let data = {};
+    try {
+      data = await response.json();
+    } catch (error) {}
 
-    window[callbackName] = (result) => {
-      cleanup(script);
-      callback(result);
-    };
+    if (!response.ok) {
+      const message = data && data.message ? data.message : 'request_failed';
+      throw new Error(message);
+    }
 
-    const script = document.createElement('script');
-    const query = new URLSearchParams(Object.assign({}, params, {
-      action: action,
-      callback: callbackName
-    }));
-    script.src = `${scriptUrl}?${query.toString()}`;
-    script.onerror = () => {
-      cleanup(script);
-      callback({ success: false, error: 'network' });
-    };
-    document.body.appendChild(script);
+    return data;
   }
 
   function updateCapacityStatus(result) {
-    if (!capacityStatus || !result || typeof result !== 'object') {
-      if (submitButton && !isSubmitting) {
-        submitButton.disabled = false;
-        submitButton.textContent = '提交报名';
+    if (!capacityStatus) {
+      return;
+    }
+
+    if (!result || typeof result.limit !== 'number') {
+      capacityStatus.textContent = '报名进行中';
+      capacityStatus.className = 'capacity-status';
+      lastKnownCapacity = null;
+      if (!isSubmitting) {
+        setSubmitState(false, '提交报名');
       }
       return;
     }
 
-    const hasLimit = typeof result.limit === 'number';
     const rawCount = typeof result.count === 'number' ? result.count : 0;
-    const count = hasLimit ? Math.min(rawCount, result.limit) : rawCount;
+    const count = Math.min(rawCount, result.limit);
     const remaining = typeof result.remaining === 'number'
-      ? (hasLimit ? Math.max(0, Math.min(result.remaining, result.limit)) : result.remaining)
-      : (hasLimit ? Math.max(0, result.limit - count) : null);
-    const isFull = Boolean(result.isFull || (hasLimit && rawCount >= result.limit) || (hasLimit && remaining === 0));
+      ? Math.max(0, Math.min(result.remaining, result.limit))
+      : Math.max(0, result.limit - count);
+    const isFull = Boolean(result.isFull || remaining === 0 || rawCount >= result.limit);
 
     lastKnownCapacity = {
-      hasLimit,
       count,
       remaining,
-      isFull
+      isFull,
+      limit: result.limit,
+      registrationClosed: Boolean(result.registrationClosed)
     };
 
-    if (!hasLimit) {
-      capacityStatus.textContent = '报名进行中';
-      capacityStatus.className = 'capacity-status';
+    if (result.registrationClosed) {
+      capacityStatus.textContent = '报名截止';
+      capacityStatus.className = 'capacity-status closed';
+      if (!isSubmitting) {
+        setSubmitState(true, '报名截止');
+      }
       return;
     }
 
     if (isFull) {
       capacityStatus.textContent = '报名已满';
       capacityStatus.className = 'capacity-status full';
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.textContent = '报名已满';
+      if (!isSubmitting) {
+        setSubmitState(true, '报名已满');
       }
       return;
     }
 
     capacityStatus.textContent = `报名中 · 剩余 ${remaining} 个名额（已报名 ${count}/${result.limit}）`;
     capacityStatus.className = 'capacity-status open';
-    if (submitButton && !isSubmitting && !lastCheckExists) {
-      submitButton.disabled = false;
-      submitButton.textContent = '提交报名';
+    if (!isSubmitting && !lastCheckExists) {
+      setSubmitState(false, '提交报名');
     }
   }
 
-  function refreshCapacityStatus() {
-    const event = getEventValue();
-    if (!event || !capacityStatus) {
+  function applyClosedState() {
+    if (!capacityStatus) {
+      return;
+    }
+
+    capacityStatus.textContent = '报名截止';
+    capacityStatus.className = 'capacity-status closed';
+    lastKnownCapacity = {
+      count: 0,
+      remaining: 0,
+      isFull: false,
+      limit: null,
+      registrationClosed: true
+    };
+    if (!isSubmitting) {
+      setSubmitState(true, '报名截止');
+    }
+  }
+
+  async function refreshCapacityStatus() {
+    const eventId = getEventValue();
+    if (!eventId || !capacityStatus) {
       return;
     }
 
     isLoadingCapacity = true;
-    if (submitButton && !isSubmitting) {
-      submitButton.disabled = true;
-      submitButton.textContent = '查询报名状态中...';
+    if (!isSubmitting) {
+      setSubmitState(true, '查询报名状态中...');
     }
 
-    jsonpRequest('status', { event }, (result) => {
-      isLoadingCapacity = false;
-      if (!result || result.error === 'network' || result.success === false) {
+    try {
+      const result = await requestJson(`${apiUrl}?action=status&event=${encodeURIComponent(eventId)}`);
+      updateCapacityStatus(result);
+    } catch (error) {
+      if (isRegistrationClosedLocally(eventId)) {
+        applyClosedState();
+      } else {
         capacityStatus.textContent = '报名进行中';
         capacityStatus.className = 'capacity-status';
         lastKnownCapacity = null;
-        if (submitButton && !isSubmitting) {
-          submitButton.disabled = false;
-          submitButton.textContent = '提交报名';
+        if (!isSubmitting) {
+          setSubmitState(false, '提交报名');
         }
-        return;
       }
-      updateCapacityStatus(result);
-    });
+    } finally {
+      isLoadingCapacity = false;
+    }
   }
 
-  function runDuplicateCheck(email, event, onDone) {
-    if (!email || !event) {
-      onDone({ exists: false });
-      return;
+  async function checkDuplicate(email, eventId) {
+    if (!email || !eventId) {
+      return { success: true, exists: false };
     }
-    if (isChecking) {
-      pendingCheckCallbacks.push({ email, event, onDone });
-      return;
-    }
-    isChecking = true;
-    jsonpRequest('check', { email, event }, (result) => {
-      isChecking = false;
-      const finalResult = result || { exists: false };
-      onDone(finalResult);
 
-      if (pendingCheckCallbacks.length > 0) {
-        const queuedCallbacks = pendingCheckCallbacks.slice();
-        pendingCheckCallbacks = [];
-        queuedCallbacks.forEach((item) => {
-          if (item.email === email && item.event === event) {
-            item.onDone(finalResult);
-            return;
-          }
-          runDuplicateCheck(item.email, item.event, item.onDone);
-        });
-      }
-    });
-  }
+    const result = await requestJson(
+      `${apiUrl}?action=check&event=${encodeURIComponent(eventId)}&email=${encodeURIComponent(email)}`
+    );
 
-  function handleDuplicateResult(email, event, result) {
-    const exists = Boolean(result && result.exists);
     lastCheckedEmail = email;
-    lastCheckedEvent = event;
-    lastCheckExists = exists;
-
-    if (exists) {
-      showMessage('该邮箱已报名，无需重复提交。', 'error');
-      if (submitButton) {
-        submitButton.disabled = true;
-      }
-    } else if (submitButton && !(lastKnownCapacity && lastKnownCapacity.isFull)) {
-      submitButton.disabled = false;
-    }
-
+    lastCheckedEvent = eventId;
+    lastCheckExists = Boolean(result && result.exists);
     updateCapacityStatus(result);
+
+    return result;
   }
 
   if (emailInput) {
-    const checkOnBlur = () => {
+    const runCheckOnBlur = async () => {
       const email = normalizeEmail(emailInput.value);
-      const event = getEventValue();
-      if (!email || !isValidEmail(email)) {
+      const eventId = getEventValue();
+      if (!email || !isValidEmail(email) || !eventId) {
         return;
       }
 
-      runDuplicateCheck(email, event, (result) => {
-        handleDuplicateResult(email, event, result);
-      });
+      try {
+        const result = await checkDuplicate(email, eventId);
+        if (result.exists) {
+          showMessage('该邮箱已报名，无需重复提交。', 'error');
+          setSubmitState(true, '提交报名');
+        }
+      } catch (error) {}
     };
 
-    emailInput.addEventListener('blur', checkOnBlur);
-    emailInput.addEventListener('change', checkOnBlur);
+    emailInput.addEventListener('blur', runCheckOnBlur);
+    emailInput.addEventListener('change', runCheckOnBlur);
   }
 
-  function startSubmission() {
-    if (isSubmitting) {
-      return;
-    }
+  async function submitRegistration(payload) {
     isSubmitting = true;
-    const timestampInput = document.getElementById('timestamp');
-    if (timestampInput) {
-      timestampInput.value = new Date().toISOString();
-    }
-
-    if (submitButton) {
-      submitButton.disabled = true;
-      submitButton.textContent = '提交中...';
-    }
+    setSubmitState(true, '提交中...');
     showMessage('正在提交报名信息...', 'loading');
 
-    let timeoutId = setTimeout(() => {
-      if (submitButton && submitButton.disabled) {
-        try {
-          const iframeUrl = hiddenIframe && hiddenIframe.contentWindow
-            ? hiddenIframe.contentWindow.location.href
-            : '';
-          if (iframeUrl && (iframeUrl.includes('error') || iframeUrl.includes('403') || iframeUrl.includes('401'))) {
-            showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
-          } else {
-            showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
-            form.reset();
-          }
-        } catch (error) {
-          showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
-          form.reset();
-        }
-        isSubmitting = false;
-        submitButton.disabled = false;
-        submitButton.textContent = '提交报名';
-      }
-    }, 5000);
+    try {
+      const result = await requestJson(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
 
-    if (hiddenIframe) {
-      hiddenIframe.addEventListener('load', function clearTimeout() {
-        clearTimeout(timeoutId);
-      }, { once: true });
-    }
-  }
-
-  if (hiddenIframe) {
-    hiddenIframe.addEventListener('load', () => {
-      try {
-        const iframeDoc = hiddenIframe.contentDocument || hiddenIframe.contentWindow.document;
-        const responseText = iframeDoc.body ? iframeDoc.body.innerText : '';
-
-        if (responseText.includes('duplicate')) {
-          showMessage('该邮箱已报名，无需重复提交。', 'error');
-        } else if (responseText.includes('email_failed')) {
-          showMessage('报名已记录，但确认邮件发送失败，请联系主办方。', 'error');
-        } else if (responseText.includes('"full"') || responseText.includes('活动已满')) {
-          showMessage('报名已满，当前活动最多接受 40 人。', 'error');
-        } else if (responseText.includes('success') || responseText.includes('成功') || responseText.includes('OK')) {
-          showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
-          form.reset();
-        } else if (responseText.includes('error') || responseText.includes('Error') || responseText.includes('403') || responseText.includes('401')) {
-          showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
+      if (result.error === 'duplicate') {
+        showMessage('该邮箱已报名，无需重复提交。', 'error');
+        lastCheckExists = true;
+      } else if (result.error === 'registration_closed') {
+        showMessage('报名已截止。', 'error');
+      } else if (result.error === 'full') {
+        showMessage('报名已满。', 'error');
+      } else if (result.error === 'email_failed') {
+        showMessage('报名成功，但确认邮件发送失败，请联系主办方获取活动地址。', 'error');
+      } else if (result.success) {
+        if (result.emailConfigured === false) {
+          showMessage('报名成功。确认邮件未启用，请联系主办方获取活动地址。', 'success');
         } else {
           showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
-          form.reset();
         }
-      } catch (error) {
-        try {
-          const iframeUrl = hiddenIframe.contentWindow.location.href;
-          if (iframeUrl.includes('duplicate')) {
-            showMessage('该邮箱已报名，无需重复提交。', 'error');
-          } else if (iframeUrl.includes('email_failed')) {
-            showMessage('报名已记录，但确认邮件发送失败，请联系主办方。', 'error');
-          } else if (iframeUrl.includes('full')) {
-            showMessage('报名已满，当前活动最多接受 40 人。', 'error');
-          } else if (iframeUrl.includes('error') || iframeUrl.includes('403') || iframeUrl.includes('401')) {
-            showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
-          } else {
-            showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
-            form.reset();
-          }
-        } catch (urlError) {
-          showMessage('报名成功，请查收确认邮件。若未收到，请检查邮箱地址或垃圾邮件箱。', 'success');
-          form.reset();
-        }
+        form.reset();
+        lastCheckedEmail = '';
+        lastCheckedEvent = '';
+        lastCheckExists = false;
+      } else {
+        showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
       }
 
-      if (submitButton) {
-        isSubmitting = false;
-        if (lastKnownCapacity && lastKnownCapacity.isFull) {
-          submitButton.disabled = true;
-          submitButton.textContent = '报名已满';
-        } else {
-          submitButton.disabled = false;
-          submitButton.textContent = '提交报名';
-        }
+      updateCapacityStatus(result);
+    } catch (error) {
+      showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
+    } finally {
+      isSubmitting = false;
+      if (lastKnownCapacity && lastKnownCapacity.registrationClosed) {
+        setSubmitState(true, '报名截止');
+      } else if (lastKnownCapacity && lastKnownCapacity.isFull) {
+        setSubmitState(true, '报名已满');
+      } else {
+        setSubmitState(false, '提交报名');
       }
       refreshCapacityStatus();
-    });
-
-    hiddenIframe.addEventListener('error', () => {
-      showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
-      if (submitButton) {
-        isSubmitting = false;
-        submitButton.disabled = false;
-        submitButton.textContent = '提交报名';
-      }
-    });
+    }
   }
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
     if (isSubmitting) {
-      event.preventDefault();
-      return false;
-    }
-    if (allowSubmit) {
-      allowSubmit = false;
-      startSubmission();
       return;
     }
 
@@ -352,47 +289,63 @@
     const eventId = getEventValue();
 
     if (!name || !email || !company) {
-      event.preventDefault();
       showMessage('请填写所有必填字段', 'error');
-      return false;
-    }
-
-    if (!isValidEmail(email)) {
-      event.preventDefault();
-      showMessage('请输入有效的邮箱地址', 'error');
-      return false;
-    }
-
-    if (isLoadingCapacity) {
-      event.preventDefault();
-      showMessage('正在查询报名状态，请稍候再提交。', 'loading');
-      return false;
-    }
-
-    if (lastKnownCapacity && lastKnownCapacity.isFull) {
-      event.preventDefault();
-      showMessage('报名已满，当前活动最多接受 40 人。', 'error');
-      return false;
-    }
-
-    if (lastCheckedEmail === email && lastCheckedEvent === eventId) {
-      if (lastCheckExists) {
-        event.preventDefault();
-        showMessage('该邮箱已报名，无需重复提交。', 'error');
-        return false;
-      }
-      startSubmission();
       return;
     }
 
-    event.preventDefault();
-    runDuplicateCheck(email, eventId, (result) => {
-      handleDuplicateResult(email, eventId, result);
-      if (result && result.exists) {
+    if (!isValidEmail(email)) {
+      showMessage('请输入有效的邮箱地址', 'error');
+      return;
+    }
+
+    if (isLoadingCapacity) {
+      showMessage('正在查询报名状态，请稍候再提交。', 'loading');
+      return;
+    }
+
+    if (lastKnownCapacity && lastKnownCapacity.registrationClosed) {
+      showMessage('报名已截止。', 'error');
+      return;
+    }
+
+    if (lastKnownCapacity && lastKnownCapacity.isFull) {
+      showMessage('报名已满。', 'error');
+      return;
+    }
+
+    try {
+      let duplicateResult = null;
+      if (lastCheckedEmail === email && lastCheckedEvent === eventId) {
+        duplicateResult = { exists: lastCheckExists };
+      } else {
+        duplicateResult = await checkDuplicate(email, eventId);
+      }
+
+      if (duplicateResult.exists) {
+        showMessage('该邮箱已报名，无需重复提交。', 'error');
         return;
       }
-      allowSubmit = true;
-      form.submit();
+
+      if (duplicateResult.registrationClosed) {
+        showMessage('报名已截止。', 'error');
+        return;
+      }
+
+      if (duplicateResult.isFull) {
+        showMessage('报名已满。', 'error');
+        return;
+      }
+    } catch (error) {
+      showMessage('报名未成功，请检查信息是否正确，或联系主办方报名。', 'error');
+      return;
+    }
+
+    await submitRegistration({
+      name,
+      email,
+      company,
+      event: eventId,
+      timestamp: new Date().toISOString()
     });
   });
 

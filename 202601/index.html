@@ -105,7 +105,7 @@
           请填写以下信息完成报名，我们会在活动前通过邮件与您确认。
         </p>
         
-        <form class="registration-form" id="registrationForm" target="hiddenIframe" data-script-url="https://script.google.com/macros/s/AKfycby-N-KkaW5Dd_crx7P5hbRiFmkkZokRPXHZjzkMG1f80lA_IITK6PTx8r8Eel3iZ3ZK/exec">
+        <form class="registration-form" id="registrationForm" data-api-url="/api/registrations">
           <div class="form-group">
             <label for="name" class="form-label">姓名 <span style="color: var(--accent);">*</span></label>
             <input 
@@ -153,7 +153,6 @@
         </form>
         
         <!-- 隐藏的 iframe 用于提交表单，避免页面刷新 -->
-        <iframe name="hiddenIframe" id="hiddenIframe" style="display: none;"></iframe>
       </div>
 
       <div class="footer">

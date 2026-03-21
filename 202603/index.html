@@ -93,6 +93,11 @@
       background: rgba(127, 29, 29, 0.32);
       border-color: rgba(248, 113, 113, 0.22);
     }
+    .capacity-status.closed {
+      color: #fde68a;
+      background: rgba(120, 53, 15, 0.28);
+      border-color: rgba(251, 191, 36, 0.22);
+    }
     @media (max-width: 768px) {
       h1 { font-size: 1.75rem; }
       .speaker-card {
@@ -213,7 +218,7 @@
           本次活动限 40 人。请填写以下信息完成报名，报名成功后我们会通过邮件发送具体地址。
         </p>
         <div class="capacity-status" id="capacityStatus">正在加载报名状态...</div>
-        <form class="registration-form" id="registrationForm" target="hiddenIframe" data-script-url="https://script.google.com/macros/s/AKfycby49TLj7pxOlnqy2edE4XCtgh5eGRBUYWJPPQ0bffg27Ks9HkJw3tAorDVjVe0bDZqlFA/exec">
+        <form class="registration-form" id="registrationForm" data-api-url="/api/registrations">
           <div class="form-group">
             <label for="name" class="form-label">姓名 <span style="color: var(--accent);">*</span></label>
             <input type="text" id="name" name="name" class="form-input" placeholder="请输入您的姓名" required>
@@ -231,7 +236,6 @@
           <button type="submit" class="form-button" id="submitButton">提交报名</button>
           <div class="form-message" id="formMessage"></div>
         </form>
-        <iframe name="hiddenIframe" id="hiddenIframe" style="display: none;"></iframe>
       </div>
 
       <div class="footer">

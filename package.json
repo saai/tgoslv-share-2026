@@ -1,0 +1,20 @@
+{
+  "name": "tgoslv-share-2026",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TGO Silicon Valley event pages with db9-backed registrations",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "db:init": "node scripts/init-db.js",
+    "export:csv": "node scripts/export-registrations-csv.js",
+    "export:sheet": "node scripts/export-registrations-google-sheet.js"
+  },
+  "dependencies": {
+    "googleapis": "^150.0.1",
+    "nodemailer": "^6.10.0",
+    "pg": "^8.16.0",
+    "vercel": "^50.34.2"
+  }
+}
